@@ -8,5 +8,5 @@ body {
 }
 
 #app {
-  @apply h-full w-full text-white bg-[hsl(0,0%,2%)];
+  @apply h-full w-full text-white bg-dark-8 font-sans;
 }

@@ -4,9 +4,12 @@ import {
   presetIcons,
   presetUno,
   presetAttributify,
+  presetWebFonts,
   transformerDirectives,
   transformerVariantGroup,
 } from "unocss";
+
+import { colorResolver } from "@unocss/preset-mini/utils";
 
 // https://github.com/unocss/unocss/tree/main/packages/vite
 // https://github.com/unocss/unocss/tree/main/packages/vite#svelte
@@ -24,12 +27,61 @@ export default defineConfig({
   theme: {},
 
   // https://github.com/unocss/unocss#custom-rules
-  rules: [],
+  rules: [
+    // firefox-scrollbar-width
+    [/^f-scrollbar-w-(auto|thin|none)$/, ([, v]) => ({ "scrollbar-width": `${v}` })],
+    [
+      // firefox-scrollbar-color
+      /^f-scrollbar-c-(.+)$/,
+      colorResolver("scrollbar-color", "f-scrollbar-c"),
+      { autocomplete: "f-scrollbar-c-$colors" },
+    ],
+  ],
 
   // https://github.com/unocss/unocss#shortcuts
-  shortcuts: {},
+  shortcuts: [
+    // use when width and height values are the same
+    [/^square-(.*)$/, ([, v]) => `h-${v} w-${v}`],
+  ],
+
+  variants: [
+    matcher => {
+      const [m1, m2, m3] = ["scrollbar:", "scrollbar-track:", "scrollbar-thumb:"];
+      let matchedStr = "";
+
+      if (matcher.startsWith(m1)) {
+        matchedStr = m1;
+      } else if (matcher.startsWith(m2)) {
+        matchedStr = m2;
+      } else if (matcher.startsWith(m3)) {
+        matchedStr = m3;
+      } else {
+        return matcher;
+      }
+
+      return {
+        matcher: matcher.slice(matchedStr.length),
+        selector: s =>
+          `${s}::-webkit-scrollbar${
+            matchedStr == m2 ? "-track" : matchedStr == m3 ? "-thumb" : ""
+          }`,
+      };
+    },
+  ],
 
   // https://github.com/unocss/unocss#using-presets
-  presets: [presetUno(), presetIcons({ scale: 1.2, cdn: "https://esm.sh/" }), presetAttributify()],
+  presets: [
+    presetUno(),
+    presetIcons({ scale: 1.2 }),
+    presetAttributify(),
+    presetWebFonts({
+      fonts: {
+        sans: "Nunito Sans",
+        // hat: "Red Hat Display",
+        // exo: "Exo",
+        // que: "Questrial",
+      },
+    }),
+  ],
   transformers: [transformerDirectives(), transformerVariantGroup()],
 });
