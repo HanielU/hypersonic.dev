@@ -4,13 +4,14 @@
   import avatar from "$lib/assets/myavatar.png";
   import type { TransitionConfig } from "svelte/transition";
   import type { Writable } from "svelte/store";
-  import { flip } from "svelte/animate";
-  import { afterUpdate, beforeUpdate, getContext, onMount } from "svelte";
+  import { afterUpdate, beforeUpdate, getContext, onDestroy, onMount } from "svelte";
   import { chatData } from "$lib/chatData";
+  import { flip } from "svelte/animate";
 
   const refresh = getContext<Writable<boolean>>("refresh");
   let div: HTMLDivElement;
   let autoscroll: boolean;
+  let interval: NodeJS.Timer;
 
   beforeUpdate(() => {
     autoscroll = div && div.offsetHeight + div.scrollTop > div.scrollHeight - 20;
@@ -20,16 +21,16 @@
     if (autoscroll) div.scrollTo({ top: div.scrollHeight, behavior: "smooth" });
   });
 
-  let data: Array<{
+  let chatBubbleData: Array<{
     title: string;
     content: string;
   }> = [];
 
   function init() {
     let counter = 0;
-    let interval = setInterval(() => {
-      if (data.length < chatData.length) {
-        data[counter] = chatData[counter];
+    interval = setInterval(() => {
+      if (chatBubbleData.length < chatData.length) {
+        chatBubbleData[counter] = chatData[counter];
         counter++;
       } else {
         clearInterval(interval);
@@ -56,6 +57,7 @@
   }
 
   onMount(init);
+  onDestroy(() => clearInterval(interval));
 
   function removeBubble(_: Element): TransitionConfig {
     return {
@@ -105,7 +107,7 @@
       bind:this={div}
     >
       <div class="mt-auto flex flex-col gap-2">
-        {#each data as { title, content }, i (i)}
+        {#each chatBubbleData as { title, content }, i (i)}
           <div animate:flip={{ duration: 500 }}>
             <Card
               class={title == "Get in touch" // if this is the last element
@@ -133,7 +135,7 @@
           </div>
         {/each}
 
-        {#if data.length !== chatData.length}
+        {#if chatBubbleData.length !== chatData.length}
           <!-- typing-bubble -->
           <div
             style="transform: scale(0);"
