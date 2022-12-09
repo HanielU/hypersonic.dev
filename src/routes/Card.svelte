@@ -3,9 +3,9 @@
   import clsx from "clsx";
   import type { TransitionConfig } from "svelte/transition";
 
-  export let title: string;
+  let title: string;
   let classnames = "";
-  export { classnames as class };
+  export { classnames as class, title };
 
   function cardIn(_: Element): TransitionConfig {
     return {
@@ -16,7 +16,6 @@
           translateY: {
             value: [20, 0],
             easing: "easeOutQuad",
-            duration: 500,
           },
           duration: 500,
           easing: "easeOutQuad",

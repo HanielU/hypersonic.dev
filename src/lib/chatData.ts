@@ -22,6 +22,14 @@ export const chatData = [
     content: `Lorem ipsum dolor sit amet consectetur adipisicing elit. Libero, modi!`,
   },
   {
+    title: "See a sample of my work",
+    content: `Lorem ipsum dolor sit amet consectetur adipisicing elit. Libero, modi!`,
+  },
+  {
+    title: "See a sample of my work",
+    content: `Lorem ipsum dolor sit amet consectetur adipisicing elit. Libero, modi!`,
+  },
+  {
     title: "Get in touch",
     content: "Message me",
   },

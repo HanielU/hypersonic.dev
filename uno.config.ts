@@ -24,7 +24,12 @@ export default defineConfig({
   extractors: [extractorSvelte],
 
   // https://github.com/unocss/unocss#extend-theme
-  theme: {},
+  theme: {
+    breakpoints: {
+      sm: "490px",
+      md: "640px",
+    },
+  },
 
   // https://github.com/unocss/unocss#custom-rules
   rules: [
