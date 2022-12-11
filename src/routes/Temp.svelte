@@ -20,9 +20,10 @@
   let showTypingIndicator = false;
 
   /**
-   * This is used to restart the animation when the typing indicator is destroyed.
+   * This is used to restart the animation when the typing indicator
+   * is destroyed while the animation is still running.
    */
-  let restarted = false;
+  let animScheduled = false;
 
   beforeUpdate(() => {
     autoscrollChatBubblesWrapper =
@@ -43,46 +44,55 @@
     }
   });
 
-  function monitorTypingIndicatorDestruction(_: HTMLDivElement) {
+  /**
+   * This `action` schedules the animation when the typing indicator is destroyed.
+   */
+  function watchTypingIndicator(_: HTMLDivElement) {
     return {
       destroy() {
-        if (restarted) {
+        if (animScheduled) {
           showTypingIndicator = true;
-          restartFunctionality();
+          runAnimProcess();
         }
       },
     };
   }
 
-  function restartFunctionality() {
+  function runAnimProcess() {
     populateChatBubbles(chatData);
-    restarted = false;
   }
 
-  async function restartAnimation() {
+  function scheduleAnimation() {
     clearInterval(interval);
-    restarted = true;
+    if (!animScheduled) animScheduled = true;
+
+    // showTypingIndicator = false when the typing indicator is destroyed...
+    // by clicking on the avatar while the typing indicator is animating.
+
+    // showTypingIndicator = true when the animation is scheduled after
+    // the typing indicator is done animating or not animating at all (e.g on first Page mount).
     showTypingIndicator = !showTypingIndicator;
     chatBubbleData = [];
-    if (showTypingIndicator) restartFunctionality();
+    if (showTypingIndicator) runAnimProcess();
   }
 
   function populateChatBubbles(sourceChatData: ChatData[]) {
-    let counter = 0;
+    let index = 0;
     interval = setInterval(() => {
-      chatBubbleData[counter] = sourceChatData[counter];
-      counter++;
+      chatBubbleData[index] = sourceChatData[index];
+      index++;
 
+      // stop the interval when the chatBubbleData array is equal to the sourceChatData array.
       if (chatBubbleData.length === sourceChatData.length) {
-        showTypingIndicator = false;
         clearInterval(interval);
+        showTypingIndicator = false;
+        animScheduled = false;
       }
     }, 2000);
   }
 
   onMount(() => {
-    showTypingIndicator = true;
-    populateChatBubbles(chatData);
+    scheduleAnimation();
     chatBubblesWrapper?.addEventListener("scroll", handleScroll);
   });
 
@@ -117,6 +127,18 @@
         )
       )"
   >
+    <!-- blurry header -->
+    <div
+      id="header"
+      class="
+        absolute top-0 left-0 w-full h-20% max-h-10
+        backdrop-filter backdrop-blur-6px
+        bg-dark-8/30 z-9999!
+        shadow-([0_4px_30px_rgb(0,0,0,0.1)] dark-8/28)
+        {headerCollides ? 'border-b-(1 gray-1/10) rounded-b-xl' : ''}
+        "
+    />
+
     <!-- left box -->
     <div class="flex h-full w-fit p-(l-3 y-3)">
       <div class="w-13 mt-auto rounded-full overflow-hidden sm:(w-15)">
@@ -124,26 +146,14 @@
           class="w-full cursor-pointer"
           src={avatar}
           alt="Haniel Ubogu's Avatar"
-          on:click={restartAnimation}
-          on:keydown={restartAnimation}
+          on:click={scheduleAnimation}
+          on:keydown={scheduleAnimation}
         />
       </div>
     </div>
 
     <!-- right box -->
     <div class="relative flex-1">
-      <!-- blurry header -->
-      <div
-        id="header"
-        class="
-          absolute top-0 left-0 w-full h-20% max-h-10
-          backdrop-filter backdrop-blur-6px
-          bg-dark-8/30 z-9999!
-          shadow-([0_4px_30px_rgb(0,0,0,0.1)] dark-8/28)
-          {headerCollides ? 'border-b-(1 gray-1/10) rounded-b-xl' : ''}
-          "
-      />
-
       <div
         class="p-3 pt-11 flex overflow-(x-hidden y-auto) h-full
         f-scrollbar-w-thin f-scrollbar-c-neutral-200/40
@@ -190,7 +200,7 @@
               class="
                 typing-indicator-wrapper transform-origin-bl flex gap-1 
               bg-dark-3 w-fit p-3 pt-4 rounded-full sticky bottom-0"
-              use:monitorTypingIndicatorDestruction
+              use:watchTypingIndicator
               in:typingIndicatorAnimation
               out:slide={{ duration: 100 }}
             >
