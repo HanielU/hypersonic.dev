@@ -21,6 +21,8 @@
     "@typescript-eslint/parser": "^5.46.0",
     "@unocss/preset-mini": "^0.47.5",
     "@unocss/reset": "^0.47.5",
+    "@vanilla-extract/css": "^1.9.2",
+    "@vanilla-extract/vite-plugin": "^3.7.0",
     "eslint": "^8.29.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-svelte3": "^4.0.0",

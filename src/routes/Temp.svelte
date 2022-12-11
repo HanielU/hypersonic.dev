@@ -1,20 +1,28 @@
 <script lang="ts">
   import Card from "./Card.svelte";
-  import anime from "animejs";
   import avatar from "$lib/assets/myavatar.png";
-  import type { Writable } from "svelte/store";
-  import { slide } from "svelte/transition";
-  import { afterUpdate, beforeUpdate, getContext, onDestroy, onMount } from "svelte";
+  import type { ChatData } from "$lib/types";
+  import { afterUpdate, beforeUpdate, onDestroy, onMount } from "svelte";
   import { chatData } from "$lib/chatData";
   import { flip } from "svelte/animate";
-  import { isCollide } from "$lib/helpers";
+  import { isCollide, typingIndicatorAnimation } from "$lib/utils";
+  import { slide } from "svelte/transition";
 
-  const refresh = getContext<Writable<boolean>>("refresh");
-  let chatBubblesWrapper: HTMLDivElement;
-  let pageWrapper: HTMLDivElement;
   let autoscrollChatBubblesWrapper: boolean;
   let autoscrollPageWrapper: boolean;
+  let chatBubbleData: ChatData[] = [];
+  let chatBubblesWrapper: HTMLDivElement;
+  let headerCollides = false;
   let interval: NodeJS.Timer;
+  let pageWrapper: HTMLDivElement;
+
+  // Why this is initally false - https://stackoverflow.com/a/64444463
+  let showTypingIndicator = false;
+
+  /**
+   * This is used to restart the animation when the typing indicator is destroyed.
+   */
+  let restarted = false;
 
   beforeUpdate(() => {
     autoscrollChatBubblesWrapper =
@@ -35,57 +43,58 @@
     }
   });
 
-  let chatBubbleData: Array<{
-    title: string;
-    content: string;
-  }> = [];
+  function monitorTypingIndicatorDestruction(_: HTMLDivElement) {
+    return {
+      destroy() {
+        if (restarted) {
+          showTypingIndicator = true;
+          restartFunctionality();
+        }
+      },
+    };
+  }
 
-  function init() {
+  function restartFunctionality() {
+    populateChatBubbles(chatData);
+    restarted = false;
+  }
+
+  async function restartAnimation() {
+    clearInterval(interval);
+    restarted = true;
+    showTypingIndicator = !showTypingIndicator;
+    chatBubbleData = [];
+    if (showTypingIndicator) restartFunctionality();
+  }
+
+  function populateChatBubbles(sourceChatData: ChatData[]) {
     let counter = 0;
     interval = setInterval(() => {
-      if (chatBubbleData.length < chatData.length) {
-        chatBubbleData[counter] = chatData[counter];
-        counter++;
-      } else {
+      chatBubbleData[counter] = sourceChatData[counter];
+      counter++;
+
+      if (chatBubbleData.length === sourceChatData.length) {
+        showTypingIndicator = false;
         clearInterval(interval);
       }
     }, 2000);
-
-    anime({
-      targets: ".dot",
-      translateY: [0, -6, 0],
-      duration: 900,
-      delay: anime.stagger(100),
-      loop: true,
-      easing: "easeInQuad",
-      // endDelay: 0,
-    });
-
-    // scale in the dots-wrapper
-    anime({
-      targets: ".dots-wrapper",
-      scale: [0, 1.1, 1],
-      duration: 500,
-      easing: "easeOutQuad",
-    });
   }
 
   onMount(() => {
-    init();
+    showTypingIndicator = true;
+    populateChatBubbles(chatData);
     chatBubblesWrapper?.addEventListener("scroll", handleScroll);
   });
+
   onDestroy(() => {
     clearInterval(interval);
     chatBubblesWrapper?.removeEventListener("scroll", handleScroll);
   });
 
-  let headerCollides: boolean;
   function handleScroll() {
     if (!chatBubblesWrapper) return;
     headerCollides = isCollide(chatBubblesWrapper.children[0], document.querySelector("#header")!);
   }
-
-  $: hideChatBubbles = chatBubbleData.length === chatData.length;
 </script>
 
 <svelte:head>
@@ -115,8 +124,8 @@
           class="w-full cursor-pointer"
           src={avatar}
           alt="Haniel Ubogu's Avatar"
-          on:click={() => ($refresh = !$refresh)}
-          on:keydown={() => ($refresh = !$refresh)}
+          on:click={restartAnimation}
+          on:keydown={restartAnimation}
         />
       </div>
     </div>
@@ -127,16 +136,16 @@
       <div
         id="header"
         class="
-          absolute top-0 left-0 w-full h-10
+          absolute top-0 left-0 w-full h-20% max-h-10
           backdrop-filter backdrop-blur-6px
           bg-dark-8/30 z-9999!
           shadow-([0_4px_30px_rgb(0,0,0,0.1)] dark-8/28)
-          {headerCollides ? 'border-b-(1 gray-5/10)' : ''}
+          {headerCollides ? 'border-b-(1 gray-1/10) rounded-b-xl' : ''}
           "
       />
 
       <div
-        class="p-3 pt-10 flex overflow-(x-hidden y-auto) h-full
+        class="p-3 pt-11 flex overflow-(x-hidden y-auto) h-full
         f-scrollbar-w-thin f-scrollbar-c-neutral-200/40
         scrollbar:w-0.8
         scrollbar-track:(rounded-2.5 bg-neutral-200/2)
@@ -166,20 +175,23 @@
                     {content}
                   </a>
                 {:else}
-                  {content}
+                  {@html content}
                 {/if}
               </Card>
             </div>
           {/each}
 
-          {#if !hideChatBubbles}
-            {@const dotStyle = "dot square-1.8 bg-neutral-4 rounded-full relative top-2px"}
-            <!-- typing-bubble -->
+          <!-- typing-indicator -->
+          {#if showTypingIndicator}
+            {@const dotStyle =
+              "typing-indicator-dot square-1.8 bg-neutral-4 rounded-full relative top-2px"}
             <div
               style="transform: scale(0);"
               class="
-                dots-wrapper transform-origin-bl flex gap-1 
+                typing-indicator-wrapper transform-origin-bl flex gap-1 
               bg-dark-3 w-fit p-3 pt-4 rounded-full sticky bottom-0"
+              use:monitorTypingIndicatorDestruction
+              in:typingIndicatorAnimation
               out:slide={{ duration: 100 }}
             >
               <div class={dotStyle} />

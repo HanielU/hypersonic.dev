@@ -3,7 +3,7 @@
   import clsx from "clsx";
   import type { TransitionConfig } from "svelte/transition";
 
-  let title: string;
+  let title = "";
   let classnames = "";
   export { classnames as class, title };
 
@@ -32,7 +32,9 @@
   style="transform: scale(0);"
   class={clsx("card transform-origin-bl bg-dark-3/60 p-4", classnames)}
 >
-  <h3 class="font-semibold">{title}</h3>
+  {#if title.trim()}
+    <h3 class="font-semibold">{title}</h3>
+  {/if}
   <p class="text-neutral-4">
     <slot />
   </p>
