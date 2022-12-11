@@ -139,7 +139,7 @@
         "
     />
 
-    <!-- left box -->
+    <!-- left box / Avatar Section-->
     <div class="flex h-full w-fit p-(l-3 y-3)">
       <div class="w-13 mt-auto rounded-full overflow-hidden sm:(w-15)">
         <img
@@ -152,7 +152,7 @@
       </div>
     </div>
 
-    <!-- right box -->
+    <!-- right box / Chats Section -->
     <div class="relative flex-1">
       <div
         class="p-3 pt-11 flex overflow-(x-hidden y-auto) h-full
@@ -164,7 +164,7 @@
       >
         <div class="relative mt-auto flex flex-col gap-2 z-1">
           {#each chatBubbleData as { title, content }, i (i)}
-            <div animate:flip={{ duration: 500 }} class="contents;">
+            <div animate:flip={{ duration: 450 }}>
               <Card
                 class={title == "Get in touch"
                   ? "min-w-fit w-40% rounded-(b-32px tr-32px tl-lg)"
