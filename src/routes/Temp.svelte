@@ -6,7 +6,9 @@
   import { chatData } from "$lib/chatData";
   import { flip } from "svelte/animate";
   import { isCollide, typingIndicatorAnimation } from "$lib/utils";
+  import { quintOut } from "svelte/easing";
   import { slide } from "svelte/transition";
+  import { crossfade } from "svelte/transition";
 
   let autoscrollChatBubblesWrapper: boolean;
   let autoscrollPageWrapper: boolean;
@@ -24,6 +26,29 @@
    * is destroyed while the animation is still running.
    */
   let animScheduled = false;
+
+  let avatarPos: "initial" | "header" = "initial";
+
+  const toggleAvatarPos = (pos?: typeof avatarPos) =>
+    (avatarPos = pos || (avatarPos === "initial" ? "header" : "initial"));
+
+  const [send, receive] = crossfade({
+    duration: 600,
+    // when you remove an element
+    fallback(node) {
+      const style = getComputedStyle(node);
+      const transform = style.transform === "none" ? "" : style.transform;
+
+      return {
+        duration: 600,
+        easing: quintOut,
+        css: t => `
+          opacity: ${t}
+          transform: ${transform} scale(${t});
+        `,
+      };
+    },
+  });
 
   beforeUpdate(() => {
     autoscrollChatBubblesWrapper =
@@ -104,6 +129,11 @@
   function handleScroll() {
     if (!chatBubblesWrapper) return;
     headerCollides = isCollide(chatBubblesWrapper.children[0], document.querySelector("#header")!);
+    if (headerCollides) {
+      toggleAvatarPos("header");
+    } else {
+      toggleAvatarPos("initial");
+    }
   }
 </script>
 
@@ -131,31 +161,65 @@
     <div
       id="header"
       class="
-        absolute top-0 left-0 w-full h-20% max-h-10
+        absolute top-0 left-0 w-full h-20% max-h-15
+        px-3 py-2 flex items-center justify-between
         backdrop-filter backdrop-blur-6px
         bg-dark-8/30 z-9999!
         shadow-([0_4px_30px_rgb(0,0,0,0.1)] dark-8/28)
-        {headerCollides ? 'border-b-(1 gray-1/10) rounded-b-xl' : ''}
+        {headerCollides ? 'border-b-(1 gray-1/10) rounded-b-lg' : ''}
         "
-    />
+    >
+      <div class="h-full">
+        {#if avatarPos == "header"}
+          <div
+            in:receive={{ key: avatar }}
+            out:send={{ key: avatar }}
+            class="h-full mt-auto rounded-full overflow-hidden"
+          >
+            <img
+              class="h-full cursor-pointer"
+              src={avatar}
+              alt="Haniel Ubogu's Avatar"
+              on:click={scheduleAnimation}
+              on:keydown={scheduleAnimation}
+            />
+          </div>
+        {/if}
+      </div>
+
+      <button
+        on:click={() => toggleAvatarPos()}
+        class="
+        py-1 px-2 pr-2.4 ml-auto rounded-full bg-neutral-7 cursor-pointer
+        text-white mt-1 flex items-center font-medium"
+      >
+        Toggle
+      </button>
+    </div>
 
     <!-- left box / Avatar Section-->
     <div class="flex h-full w-fit p-(l-3 y-3)">
-      <div class="w-13 mt-auto rounded-full overflow-hidden sm:(w-15)">
-        <img
-          class="w-full cursor-pointer"
-          src={avatar}
-          alt="Haniel Ubogu's Avatar"
-          on:click={scheduleAnimation}
-          on:keydown={scheduleAnimation}
-        />
-      </div>
+      {#if avatarPos == "initial"}
+        <div
+          in:receive={{ key: avatar }}
+          out:send={{ key: avatar }}
+          class="w-13 mt-auto rounded-full overflow-hidden sm:(w-15)"
+        >
+          <img
+            class="w-full cursor-pointer"
+            src={avatar}
+            alt="Haniel Ubogu's Avatar"
+            on:click={scheduleAnimation}
+            on:keydown={scheduleAnimation}
+          />
+        </div>
+      {/if}
     </div>
 
     <!-- right box / Chats Section -->
     <div class="relative flex-1">
       <div
-        class="p-3 pt-11 flex overflow-(x-hidden y-auto) h-full
+        class="p-3 pt-16 flex overflow-(x-hidden y-auto) h-full
         f-scrollbar-w-thin f-scrollbar-c-neutral-200/40
         scrollbar:w-0.8
         scrollbar-track:(rounded-2.5 bg-neutral-200/2)
