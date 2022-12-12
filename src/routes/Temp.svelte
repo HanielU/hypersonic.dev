@@ -129,10 +129,8 @@
   function handleScroll() {
     if (!chatBubblesWrapper) return;
     headerCollides = isCollide(chatBubblesWrapper.children[0], document.querySelector("#header")!);
-    if (headerCollides) {
+    if (headerCollides && avatarPos === "initial") {
       toggleAvatarPos("header");
-    } else {
-      toggleAvatarPos("initial");
     }
   }
 </script>
