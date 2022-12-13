@@ -22,7 +22,7 @@ import { colorResolver } from "@unocss/preset-mini/utils";
 // https://github.com/unocss/unocss#configurations
 export default defineConfig({
   extractors: [extractorSvelte],
-  include: ["./**/*.svelte", "./**/*.ts"],
+
   // https://github.com/unocss/unocss#extend-theme
   theme: {
     breakpoints: {
