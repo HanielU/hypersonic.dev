@@ -1,9 +1,22 @@
-// @unocss-include
-
+import { buttonWithIcon } from "./styles/Button.css";
 import type { ChatData } from "./types";
+
+/* 
+  :highlight:
+  NEVER Use the Self-Closing Tag for Non self-closing HTML Elements in strings
+
+  Example: <br> is a self-closing tag, but <div> is not a self-closing tag
+  do not use <div /> instead use <div></div>
+
+  ALSO,
+  Never use template literals for concatenating class names
+  Unocss will not work and will make the cpu usage high.
+
+*/
 
 export const chatData: ChatData[] = [
   {
+    type: "full",
     title: "Hi, I'm Haniel Ubogu",
     content:
       "I am a Software Engineer, and a " +
@@ -22,22 +35,43 @@ export const chatData: ChatData[] = [
     //           with 4+ years of experience.`,
   },
   {
+    type: "full",
     title: "",
     content: `
-    I am passionate about building products that solve real-world problems,
-    and I'm always looking for opportunities to learn and grow.`,
+      I am passionate about building products that solve real-world problems,
+      and I'm always looking for opportunities to learn and grow.`,
   },
   {
+    type: "full",
     title: "What am I doing now?",
     content: `Freelance Product Designer and Remote UI Designer at Eleven Kings.`,
   },
   {
+    type: "full",
     title: "See a sample of my work",
     content: `Lorem ipsum dolor sit amet consectetur adipisicing elit. Libero, modi!`,
   },
   {
+    type: "half",
     title: "Get in touch",
-    content: "Message me",
+    content:
+      `
+      <a
+        href="https://wa.me/message/SUZHRJ4RZC4CO1"
+        target="_blank"
+        rel="noreferrer"
+        class="` +
+      buttonWithIcon +
+      ` mt-1 w-full"
+        
+      >
+        <div>
+          <div class="i-dashicons-whatsapp"></div>
+        </div>
+        
+        Message Me
+      </a>
+    `,
   },
 ];
 

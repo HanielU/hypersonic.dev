@@ -24,3 +24,22 @@ export function typingIndicatorAnimation(node: HTMLDivElement): TransitionConfig
     },
   };
 }
+
+export function cardIn(_: Element): TransitionConfig {
+  return {
+    css: () => {
+      anime({
+        targets: _,
+        scale: [0, 1.05, 1],
+        translateY: {
+          value: [20, 0],
+          easing: "easeOutQuad",
+        },
+        duration: 500,
+        easing: "easeOutQuad",
+      });
+      return "";
+    },
+    duration: 500,
+  };
+}

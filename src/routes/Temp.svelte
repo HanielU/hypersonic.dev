@@ -1,14 +1,15 @@
 <script lang="ts">
   import Card from "./Card.svelte";
   import avatar from "$lib/assets/myavatar.png";
-  import type { ChatData } from "$lib/types";
+  import type { ChatData, ChatAnimationControl } from "$lib/types";
   import { afterUpdate, beforeUpdate, onDestroy, onMount } from "svelte";
   import { chatData } from "$lib/chatData";
   import { flip } from "svelte/animate";
   import { isCollide, typingIndicatorAnimation } from "$lib/utils";
   import { quintOut } from "svelte/easing";
-  import { slide } from "svelte/transition";
+  import { fly, slide } from "svelte/transition";
   import { crossfade } from "svelte/transition";
+  import { buttonWithIcon } from "$lib/styles/Button.css";
 
   let autoscrollChatBubblesWrapper: boolean;
   let autoscrollPageWrapper: boolean;
@@ -18,8 +19,9 @@
   let interval: NodeJS.Timer;
   let pageWrapper: HTMLDivElement;
 
-  // Why this is initally false - https://stackoverflow.com/a/64444463
+  // Why these two are initally false - https://stackoverflow.com/a/64444463
   let showTypingIndicator = false;
+  let showControls = false;
 
   /**
    * This is used to restart the animation when the typing indicator
@@ -28,6 +30,17 @@
   let animScheduled = false;
 
   let avatarPos: "initial" | "header" = "initial";
+
+  const controls: ChatAnimationControl[] = [
+    {
+      action: () => chatBubbleData.length < chatData.length && populateChatBubbles(chatData, true),
+      icon: "i-ph-skip-forward-circle-duotone",
+    },
+    {
+      action: scheduleAnimation,
+      icon: "i-ph-play-circle-duotone",
+    },
+  ];
 
   const toggleAvatarPos = (pos?: typeof avatarPos) =>
     (avatarPos = pos || (avatarPos === "initial" ? "header" : "initial"));
@@ -91,9 +104,9 @@
     clearInterval(interval);
     if (!animScheduled) animScheduled = true;
 
-    // showTypingIndicator = false when the typing indicator is destroyed...
+    // :highlight:
+    // showTypingIndicator = false when the typing indicator is destroyed
     // by clicking on the avatar while the typing indicator is animating.
-
     // showTypingIndicator = true when the animation is scheduled after
     // the typing indicator is done animating or not animating at all (e.g on first Page mount).
     showTypingIndicator = !showTypingIndicator;
@@ -101,22 +114,36 @@
     if (showTypingIndicator) runAnimProcess();
   }
 
-  function populateChatBubbles(sourceChatData: ChatData[]) {
+  function populateChatBubbles(sourceChatData: ChatData[], skip = false) {
     let index = 0;
-    interval = setInterval(() => {
-      chatBubbleData[index] = sourceChatData[index];
-      index++;
+    if (skip === false) {
+      interval = setInterval(() => {
+        chatBubbleData[index] = sourceChatData[index];
+        index++;
 
-      // stop the interval when the chatBubbleData array is equal to the sourceChatData array.
-      if (chatBubbleData.length === sourceChatData.length) {
-        clearInterval(interval);
-        showTypingIndicator = false;
-        animScheduled = false;
-      }
-    }, 2000);
+        // stop the interval when the chatBubbleData array is equal to the sourceChatData array.
+        if (chatBubbleData.length === sourceChatData.length) {
+          clearInterval(interval);
+
+          // No need to show the typing indicator anymore,
+          // since all the chat bubbles have been populated.
+          showTypingIndicator = false;
+
+          // There is no animation scheduled anymore,
+          // since all the chat bubbles have been populated.
+          animScheduled = false;
+        }
+      }, 2000);
+    } else {
+      clearInterval(interval); // stop the interval if there is one.
+      chatBubbleData = sourceChatData;
+      showTypingIndicator = false;
+      animScheduled = false;
+    }
   }
 
   onMount(() => {
+    showControls = true;
     scheduleAnimation();
     chatBubblesWrapper?.addEventListener("scroll", handleScroll);
   });
@@ -129,9 +156,11 @@
   function handleScroll() {
     if (!chatBubblesWrapper) return;
     headerCollides = isCollide(chatBubblesWrapper.children[0], document.querySelector("#header")!);
-    if (headerCollides && avatarPos === "initial") {
-      toggleAvatarPos("header");
-    }
+
+    // toggle the avatar position when the header collides with the chat bubbles wrapper.
+    // if (headerCollides && avatarPos === "initial") {
+    //   toggleAvatarPos("header");
+    // }
   }
 </script>
 
@@ -196,12 +225,31 @@
     </div>
 
     <!-- left box / Avatar Section-->
-    <div class="flex h-full w-fit p-(l-3 y-3)">
+    <div class="flex flex-col h-full w-fit p-(l-3 y-3)">
+      <!-- Controls -->
+      <div class="text-3xl mt-auto mb-1.5">
+        {#if showControls}
+          {#each controls as { action, icon } (icon)}
+            <div
+              class="
+                w-full py-2 flex justify-center cursor-pointer
+                click-spring brightness-80 opacity-50
+                hover:(brightness-100 opacity-100)"
+              on:click={action}
+              on:keydown={action}
+              in:fly={{ x: 0, y: 20, duration: 500 }}
+            >
+              <div class={icon} />
+            </div>
+          {/each}
+        {/if}
+      </div>
+
       {#if avatarPos == "initial"}
         <div
           in:receive={{ key: avatar }}
           out:send={{ key: avatar }}
-          class="w-13 mt-auto rounded-full overflow-hidden sm:(w-15)"
+          class="w-13 rounded-full overflow-hidden sm:(w-15)"
         >
           <img
             class="w-full cursor-pointer"
@@ -217,38 +265,24 @@
     <!-- right box / Chats Section -->
     <div class="relative flex-1">
       <div
-        class="p-3 pt-16 flex overflow-(x-hidden y-auto) h-full
-        f-scrollbar-w-thin f-scrollbar-c-neutral-200/40
-        scrollbar:w-0.8
-        scrollbar-track:(rounded-2.5 bg-neutral-200/2)
-        scrollbar-thumb:(rounded-2.5 bg-neutral-200/8)"
+        class="
+          p-3 pt-16 flex overflow-(x-hidden y-auto) h-full
+          f-scrollbar-w-thin f-scrollbar-c-neutral-200/40
+          scrollbar:w-0.8
+          scrollbar-track:(rounded-2.5 bg-neutral-200/2)
+          scrollbar-thumb:(rounded-2.5 bg-neutral-200/8)"
         bind:this={chatBubblesWrapper}
       >
         <div class="relative mt-auto flex flex-col gap-2 z-1">
-          {#each chatBubbleData as { title, content }, i (i)}
+          {#each chatBubbleData as { title, content, type }, i (i)}
             <div animate:flip={{ duration: 450 }}>
               <Card
-                class={title == "Get in touch"
+                class={type == "half"
                   ? "min-w-fit w-40% rounded-(b-32px tr-32px tl-lg)"
                   : "rounded-(bl-lg t-2xl br-3xl)"}
                 {title}
               >
-                {#if title == "Get in touch"}
-                  <a
-                    href="https://wa.me/message/SUZHRJ4RZC4CO1"
-                    target="_blank"
-                    rel="noreferrer"
-                    class="py-1 px-2 pr-2.4 rounded-full bg-neutral-7 cursor-pointer
-                  text-white inline-block mt-1 w-full flex items-center font-medium"
-                  >
-                    <div class="mr-1">
-                      <div class="i-dashicons-whatsapp" />
-                    </div>
-                    {content}
-                  </a>
-                {:else}
-                  {@html content}
-                {/if}
+                {@html content}
               </Card>
             </div>
           {/each}
