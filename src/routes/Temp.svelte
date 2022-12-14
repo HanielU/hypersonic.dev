@@ -9,7 +9,6 @@
   import { quintOut } from "svelte/easing";
   import { fly, slide } from "svelte/transition";
   import { crossfade } from "svelte/transition";
-  import { buttonWithIcon } from "$lib/styles/Button.css";
 
   let autoscrollChatBubblesWrapper: boolean;
   let autoscrollPageWrapper: boolean;

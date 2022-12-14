@@ -1,5 +1,4 @@
 // @unocss-include
-import { buttonWithIcon } from "./styles/Button.css";
 import type { ChatData } from "./types";
 
 /* 
@@ -14,6 +13,8 @@ import type { ChatData } from "./types";
   Unocss will not work and will make the cpu usage high.
 
 */
+const bwI =
+  "flex items-center cursor-pointer text-white font-medium rounded-full bg-neutral-7 [&>div]:mr-1 py-1 px-2 pr-2.4";
 
 export const chatData: ChatData[] = [
   {
@@ -62,7 +63,7 @@ export const chatData: ChatData[] = [
         target="_blank"
         rel="noreferrer"
         class="` +
-      buttonWithIcon +
+      bwI +
       ` mt-1 w-full"
         
       >
